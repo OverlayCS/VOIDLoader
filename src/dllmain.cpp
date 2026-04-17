@@ -13,7 +13,6 @@
 
 namespace fs = std::filesystem;
 
-// --- Logging ---
 static std::ofstream g_log;
 static HANDLE g_hConsole = nullptr;
 
@@ -37,7 +36,7 @@ void LogWarn(const std::string& msg) {
     if (g_log.is_open())
         g_log << "[WARN] " << msg << std::endl;
 
-    SetColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY); // yellow
+    SetColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
     printf("[WARN] %s\n", msg.c_str());
     ResetColor();
 }
@@ -46,7 +45,7 @@ void LogError(const std::string& msg) {
     if (g_log.is_open())
         g_log << "[ERROR] " << msg << std::endl;
 
-    SetColor(FOREGROUND_RED | FOREGROUND_INTENSITY); // red
+    SetColor(FOREGROUND_RED | FOREGROUND_INTENSITY);
     printf("[ERROR] %s\n", msg.c_str());
     ResetColor();
 }
@@ -55,7 +54,7 @@ void LogSuccess(const std::string& msg) {
     if (g_log.is_open())
         g_log << "[OK] " << msg << std::endl;
 
-    SetColor(FOREGROUND_GREEN | FOREGROUND_INTENSITY); // green
+    SetColor(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
     printf("[OK] %s\n", msg.c_str());
     ResetColor();
 }
@@ -86,7 +85,6 @@ struct MonoFuncs {
     mono_runtime_invoke_t             runtime_invoke;
 };
 
-// --- Find and load Mono from the game process ---
 bool LoadMonoFuncs(MonoFuncs& funcs) {
     static bool dumped = false;
     if (!dumped) {
@@ -121,7 +119,6 @@ bool LoadMonoFuncs(MonoFuncs& funcs) {
         }
     }
 
-    // Try loading from MonoBleedingEdge folder manually if not found
     if (!mono) {
         char gamePath[MAX_PATH];
         GetModuleFileNameA(nullptr, gamePath, MAX_PATH);
@@ -162,12 +159,10 @@ bool LoadMonoFuncs(MonoFuncs& funcs) {
         funcs.runtime_invoke;
 }
 
-// --- Load a single C# plugin assembly ---
 void LoadPlugin(MonoFuncs& mono, MonoDomain* domain, const fs::path& dllPath) {
     std::string pathStr = dllPath.string();
     Log("  Opening: " + pathStr);
 
-    // Check for optional .namespace.txt metadata file
     std::string namespaceName = "";
     fs::path nsFile = dllPath;
     nsFile.replace_extension(".namespace.txt");
@@ -194,9 +189,8 @@ void LoadPlugin(MonoFuncs& mono, MonoDomain* domain, const fs::path& dllPath) {
     LogSuccess("Plugin.Init() returned: " + dllPath.filename().string());
 }
 
-// --- Main loader logic ---
-void LoadAllPlugins() {
-    // Open log file
+void LoadAllPlugins()
+{
     char gamePath[MAX_PATH];
     GetModuleFileNameA(nullptr, gamePath, MAX_PATH);
     fs::path gameDir = fs::path(gamePath).parent_path();
@@ -206,7 +200,6 @@ void LoadAllPlugins() {
     Log("Game dir: " + gameDir.string());
     Log("Process: " + std::string(gamePath));
 
-    // Poll for Mono
     MonoFuncs mono{};
     Log("Waiting for Mono...");
 
@@ -235,12 +228,10 @@ void LoadAllPlugins() {
     mono.thread_attach(domain);
     LogSuccess("Thread attached to Mono domain");
 
-    // Wait for Unity to finish initializing before invoking anything
     Log("Waiting 5s for Unity to finish init...");
     Sleep(5000);
     Log("Done waiting — loading plugins");
 
-    // Locate or create Plugins folder
     fs::path pluginsDir = gameDir / "Plugins";
     Log("Plugins dir: " + pluginsDir.string());
 
@@ -251,7 +242,6 @@ void LoadAllPlugins() {
         return;
     }
 
-    // Load every .dll in Plugins
     int count = 0;
     for (auto& entry : fs::directory_iterator(pluginsDir)) {
         if (entry.path().extension() == ".dll") {
@@ -265,9 +255,8 @@ void LoadAllPlugins() {
     g_log.close();
 }
 
-// --- Thread entry point ---
-DWORD WINAPI MainThread(LPVOID lpParam) {
-    // Spin up console
+DWORD WINAPI MainThread(LPVOID lpParam) 
+{
     AllocConsole();
     g_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -278,8 +267,7 @@ DWORD WINAPI MainThread(LPVOID lpParam) {
 
     SetConsoleTitleA("VoidLoader");
 
-    // Print banner
-    SetColor(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY); // cyan
+    SetColor(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY); 
     printf("╔═══════════════════════════════╗\n");
     printf("║        VoidLoader v1.0        ║\n");
     printf("╚═══════════════════════════════╝\n");
@@ -289,15 +277,14 @@ DWORD WINAPI MainThread(LPVOID lpParam) {
     return 0;
 }
 
-// --- DLL entry point ---
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) 
+{
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
 
-        // Named mutex is system-wide — blocks second process from running too
+        //it stops it making more then 1 console (took and hour to fix :( )
         HANDLE hMutex = CreateMutexA(nullptr, TRUE, "VoidLoader_SingleInstance");
         if (hMutex == nullptr || GetLastError() == ERROR_ALREADY_EXISTS) {
-            // Another process already has the loader running
             if (hMutex) CloseHandle(hMutex);
             return TRUE;
         }
