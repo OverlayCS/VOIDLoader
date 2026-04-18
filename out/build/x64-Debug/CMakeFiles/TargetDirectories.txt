@@ -1,0 +1,3 @@
+E:/Modding Tools/FluxInjector/VØIDLoader/out/build/x64-Debug/CMakeFiles/version.dir
+E:/Modding Tools/FluxInjector/VØIDLoader/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+E:/Modding Tools/FluxInjector/VØIDLoader/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
