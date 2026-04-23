@@ -53,6 +53,7 @@ VØID Loader hooks into the Unity runtime and provides a unified environment whe
 * Built-in mod manager interface
 * Automatic dependency resolution
 * Expanded API for custom VØID mods
+* External GUI System (you write the gui outside of the mod like in ImGUI or smth)
 
 ---
 
